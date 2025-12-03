@@ -33,6 +33,8 @@ class BoardGameGui():
         for key, action in self._actions.items():
             if(g2d.key_pressed(key) and clicked_x < self._game.cols() and clicked_y < self._game.rows()):
                 self._game.play(clicked_x, clicked_y, action)
+            if(key == "n"): 
+                self.recalc_layout()
         
     def draw(self):
         for x in range(0, self._game.cols(), 1):
@@ -48,12 +50,12 @@ class BoardGameGui():
                 # I NUMERI VENGONO COLORATI DI ROSSO SE VI SONO TROPPE TENDE IN QUELLA COLONNA O RIGA
                 if((x == 0 or y == 0) and x != y): # STAMPA DEI NUMERI 
                     if(x == 0):
-                        if(y in self._game.getExceedRow()):
+                        if(y in self._game.getExceedRow(self._game.getGrid())):
                             g2d.set_color((255,0,0))
                         else: g2d.set_color((0,0,0))
                         
                     else:  
-                        if(x in self._game.getExceedCol()):
+                        if(x in self._game.getExceedCol(self._game.getGrid())):
                             g2d.set_color((255,0,0))
                         else: g2d.set_color((0,0,0))
                     
@@ -71,17 +73,19 @@ class BoardGameGui():
                             g2d.set_color((255,255,255))
                             g2d.draw_rect((pos_x+self._border_dim, pos_y+self._border_dim), (self._box_dim-self._border_dim*2, self._box_dim-self._border_dim*2))
                     case "T": # ALBERO
-                        g2d.set_color((255,0,0))
-                        g2d.draw_rect((pos_x+self._border_dim, pos_y+self._border_dim), (self._box_dim-self._border_dim*2, self._box_dim-self._border_dim*2))
+                        g2d.draw_image("sprites/tree.png",(pos_x+self._border_dim, pos_y+self._border_dim), (0,0),(38, 38))
                     case "A": # TENDA
-                        g2d.set_color((0,0,255))
                         if(self._game.sigle_error(x, y)):
-                            g2d.set_color((0,100,100))
-                        g2d.draw_rect((pos_x+self._border_dim, pos_y+self._border_dim), (self._box_dim-self._border_dim*2, self._box_dim-self._border_dim*2)) 
+                            g2d.draw_image("sprites/wrong_tent.png",(pos_x+self._border_dim, pos_y+self._border_dim), (0,0),(38, 38))
+                        g2d.draw_image("sprites/tent.png",(pos_x+self._border_dim, pos_y+self._border_dim), (0,0),(38, 38))
                     case "G": # ERBA
-                        g2d.set_color((0,255,0))
-                        g2d.draw_rect((pos_x+self._border_dim, pos_y+self._border_dim), (self._box_dim-self._border_dim*2, self._box_dim-self._border_dim*2))   
-                        
+                        g2d.draw_image("sprites/grass.png",(pos_x+self._border_dim, pos_y+self._border_dim), (0,0),(38, 38))
+                                                
         # STAMPA DEL BORDO ESTERNO PER FARE IN MODO CHE TUTTE LE LINEE SIANO SPESSE UGUALE
         g2d.set_color((0,0,0), self._border_dim*2)
         g2d.draw_rect((self._shift_x + self._box_dim, self._box_dim*2), (self._box_dim*(self._game.cols()-1), self._box_dim*(self._game.rows()-1)))
+        
+    def recalc_layout(self):
+        # RICALCOLO LO SHIFT OGNI VOLTA CHE CAMBIA LO SCHEMA
+        self._shift_x = (self._canvas_dim - self._box_dim * self._game.cols()) // 2
+        self._text_dim = int(self._box_dim * 0.6)
