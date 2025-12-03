@@ -16,7 +16,7 @@ class BoardGameGui():
         
         if(self._game.finished()):
             # testo centrale
-            g2d.set_color((30,200,50))
+            g2d.set_color((100,20,100))
             g2d.draw_text("Congratulazioni! Hai risolto lo schema", (self._canvas_dim //2, 100+self._box_dim*self._game.rows()), 30)
         
         # X E Y DEL CURSORE
@@ -77,7 +77,8 @@ class BoardGameGui():
                     case "A": # TENDA
                         if(self._game.sigle_error(x, y)):
                             g2d.draw_image("sprites/wrong_tent.png",(pos_x+self._border_dim, pos_y+self._border_dim), (0,0),(38, 38))
-                        g2d.draw_image("sprites/tent.png",(pos_x+self._border_dim, pos_y+self._border_dim), (0,0),(38, 38))
+                        else:
+                            g2d.draw_image("sprites/tent.png",(pos_x+self._border_dim, pos_y+self._border_dim), (0,0),(38, 38))
                     case "G": # ERBA
                         g2d.draw_image("sprites/grass.png",(pos_x+self._border_dim, pos_y+self._border_dim), (0,0),(38, 38))
                                                 
