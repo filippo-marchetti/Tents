@@ -3,7 +3,7 @@ import g2d
 from BoardGameGui import BoardGameGui
 
 def tick():
-    g2d.clear_canvas((20,170,80))
+    g2d.clear_canvas((20,60,110))
 
     gui.gui()
     
@@ -12,9 +12,8 @@ def main():
 
     game = Tents()
     
-    box_dim = 40 # DIMESIONE DI UNA SINGOLA CASELLA NELLA GRIGLIA
-    CANVAS_DIM = max(1000,box_dim*max(game.cols(), game.rows()))
-    shift_x = (CANVAS_DIM - box_dim*game.cols()) // 2  # GRIGLIA MESSA AL CENTRO ORIZZONTALMENTE
+    CANVAS_DIM = 899
+    box_dim = (CANVAS_DIM)/max(game.rows(), game.cols()) # DIMESIONE DI UNA SINGOLA CASELLA NELLA GRIGLIA
     text_dim = int(box_dim*0.6) # DIMENSIONE TESTO
     border_dim = 1 # DIMENSIONE TESTO
     
@@ -25,10 +24,11 @@ def main():
         "g": "fill-grass",
         "a": "hint",
         "n": "next_scheme",
+        "b": "previous_scheme",
         "r": "reset"
     }
     
-    gui = BoardGameGui(game, box_dim, shift_x, text_dim, border_dim, CANVAS_DIM, actions)
+    gui = BoardGameGui(game, box_dim, text_dim, border_dim, CANVAS_DIM, actions)
     
     g2d.main_loop(tick, 30)
     

@@ -18,6 +18,8 @@ class Tents(BoardGame):
         self._W = len(self._grid[0])
         self._H = len(self._grid)
         
+        self._solved_scheme = []
+        
         
     def play(self, x: int, y: int, action: str):
         match(action):
@@ -32,14 +34,23 @@ class Tents(BoardGame):
                     for j in range(1, self._W):
                         if(self._grid[i][j] == "."): self._grid[i][j] = "G"
             case "next_scheme":
-                if(self._current_scheme + 1 < len(self._schemes)):self._current_scheme += 1
-                else: self._current_scheme = 0
+                if(self._current_scheme + 1 < len(self._schemes)):
+                    self._current_scheme += 1
                 
-                self._grid = self.load_matrix(self._schemes[self._current_scheme])
-                
-                self._W = len(self._grid[0])
-                self._H = len(self._grid)
-                
+                    self._grid = self.load_matrix(self._schemes[self._current_scheme])
+                    
+                    self._W = len(self._grid[0])
+                    self._H = len(self._grid)
+                    self._solved_scheme = []
+            case "previous_scheme":
+                if(self._current_scheme - 1 > 0):
+                    self._current_scheme -= 1
+
+                    self._grid = self.load_matrix(self._schemes[self._current_scheme])
+                    
+                    self._W = len(self._grid[0])
+                    self._H = len(self._grid)
+                    self._solved_scheme = []
             case "reset":
                 self._grid = self.load_matrix(self._schemes[self._current_scheme])
                 
@@ -47,18 +58,25 @@ class Tents(BoardGame):
                 self._H = len(self._grid)
             
             case "hint": # FA UNA SOLA AZIONE PER VOLTA
-                solved_scheme = self.solve(self.check_moves(self.load_matrix(self._schemes[self._current_scheme])))
+                if(len(self._solved_scheme) == 0): 
+                    self._solved_scheme = self.solve(self.check_moves(self.load_matrix(self._schemes[self._current_scheme])))
+                    if(self._solved_scheme is None):
+                        print("ATTENZIONE: Schema senza soluzione")
+                        return
+
+                if(self._solved_scheme is None):
+                    print("ATTENZIONE: Schema senza soluzione")
+                    return
                 
                 for x in range(self.cols()):
                     for y in range(self.rows()):
-                        if(solved_scheme[y][x] == "A" and self._grid[y][x] != "A"):
+                        if(self._solved_scheme[y][x] == "A" and self._grid[y][x] != "A"):
                             self._grid[y][x] = "A"
                             return
-                        elif(solved_scheme[y][x] != "A" and self._grid[y][x] == "A"):
+                        elif(self._solved_scheme[y][x] != "A" and self._grid[y][x] == "A"):
                             self._grid[y][x] = "."
                             return
-            
-                        
+                                  
     def read(self, x: int, y: int) -> str: 
         return self._grid[y][x]
     
@@ -188,6 +206,9 @@ class Tents(BoardGame):
     def is_valid(self,grid):
         tent = self.find_sol_tent(grid)
         
+        if(len(self.getExceedCol(grid)) > 0 or len(self.getExceedRow(grid)) > 0):
+            return False
+        
         for t in tent:
             x, y = t
             for i in [-1, 0, 1]:
@@ -208,45 +229,47 @@ class Tents(BoardGame):
             if(not found):
                 return False
         
-        if(len(self.getExceedCol(grid)) > 0 or len(self.getExceedRow(grid)) > 0):
-            return False
-        else:
-            return True
+        return True
+                
         
     def solve(self, grid):
+        # SALVO LE CASELLE CON LE MOSSE POSSIBILI
+        possible_moves = []
         for y in range(len(grid)):
             for x in range(len(grid[0])):
                 if(grid[y][x] == "P"):
-                    # PROVA A PIAZZARE LA TENDA
-                    solver_grid = [row[:] for row in grid]
-                    solver_grid[y][x] = "A"
+                    possible_moves.append((y, x))
+                
+        for y, x in possible_moves: #CONTROLLA SOLO LE CASELLE P
+            
+            solver_grid = [row[:] for row in grid]
+            solver_grid[y][x] = "A"
 
-                    # PROIBISCE IL PIAZZAMENTO DELLE TENDE INTORNO A QUELLA NUOVA
-                    for i in [-1,0,1]:
-                        for j in [-1,0,1]:
-                            t_y, t_x = y+i, x+j
-                            if(0 <= t_y < len(grid) and 0 <= t_x < len(grid[0])):
-                                if(solver_grid[t_y][t_x] == "."):
-                                    solver_grid[t_y][t_x] = "F"
+            # PROIBISCE IL PIAZZAMENTO DELLE TENDE INTORNO A QUELLA NUOVA
+            for i in [-1,0,1]:
+                for j in [-1,0,1]:
+                    t_y, t_x = y+i, x+j
+                    if(0 <= t_y < len(grid) and 0 <= t_x < len(grid[0])):
+                        if(solver_grid[t_y][t_x] == "."):
+                            solver_grid[t_y][t_x] = "F"
 
-                    # PIAZZAMENTO DI TENDE FINO A CHE NON CI SI IMBATTE IN UN ERRORE E SE CAPITA CAMBIA POSIZIONE PER LA TENDA
-                    if(self.is_valid(solver_grid)):
-                        result = self.solve(solver_grid)
-                        if(result is not None):
-                            return result
+            # PIAZZAMENTO DI TENDE FINO A CHE NON CI SI IMBATTE IN UN ERRORE E SE CAPITA CAMBIA POSIZIONE PER LA TENDA
+            if(self.is_valid(solver_grid)):
+                result = self.solve(solver_grid)
+                if(result is not None):
+                    return result
 
-                    # SE LA TENDA E' STATA POSIZIONATO IN UNA POSIZIONE ERRATA VIENE CANCELLATA E LA SUA CASELLA PROIBITA IN UNA NUOVA GRIGLIA
-                    updated_grid = [row[:] for row in grid] # NUOVA GRIGLIA COSTRUITA CON I PROCEDIMENTI DEL COMMENTO SOPRA
-                    updated_grid[y][x] = "F"
-                    if(self.is_valid(updated_grid)):
-                        if len(self.find_sol_tent(grid)) > len(self.find_trees(grid)):
-                            return None
-                        result = self.solve(updated_grid)
-                        if(result is not None):
-                            return result
+            # SE LA TENDA E' STATA POSIZIONATO IN UNA POSIZIONE ERRATA PROVO A PROIBIRLA
+            updated_grid = [row[:] for row in grid]
+            updated_grid[y][x] = "F"
+            
+            if(self.is_valid(updated_grid)):
+                result = self.solve(updated_grid)
+                if(result is not None):
+                    return result
 
-                    # TERMINA IL CICLO SE NON CI SONO SOLUZIONI CON LA P CORRENTE
-                    return None
+            # TERMINA IL CICLO SE NON CI SONO SOLUZIONI CON LA P CORRENTE
+            return None
 
         # QUANDO NON RIMANGONO P VIENE ESEGUITO IL CONTROLLO FINALE
         if(self.is_valid(grid) and len(self.find_sol_tent(grid)) == len(self.find_trees(grid))):
@@ -273,7 +296,7 @@ class Tents(BoardGame):
         return tent
     
     # CONTROLLA ED ELIMINA LE MOSSE A PRIORI SBAGLIATE
-    def check_moves(self, grid: list):  
+    def check_moves(self, grid: list) -> list:  
         dir = [(0, -1), (0, 1), (-1, 0), (1, 0)] # ARRAY CON LE 4 DIREZIONI DA CONTROLLARE
         trees = self.find_trees(grid)
         
@@ -281,6 +304,37 @@ class Tents(BoardGame):
         
         while changed:
             changed = False 
+            
+            # PROIBLISCO LE RIGHR SE IL LIMITE E' STATO RAGGIUNTO
+            for r_index in range(1, len(grid)):
+                limit = int(grid[r_index][0])
+                num_tents = 0
+                
+                for c_index in range(1, len(grid[0])):
+                    if(grid[r_index][c_index] == "A"):
+                        num_tents += 1
+                
+                if(num_tents == limit):
+                    for c_index in range(1, len(grid[0])):
+                        if(grid[r_index][c_index] == "." or grid[r_index][c_index] == "P"):
+                            grid[r_index][c_index] = "F"
+                            changed = True
+            
+            # PROIBLISCO LE COLONNE IL CUI LIMITE E' STATO RAGGIUNTO
+            for c_index in range(1, len(grid[0])): # Itera sulle colonne della griglia di gioco
+                limit = int(grid[0][c_index])
+                num_tents = 0
+                # Controlla quante tende ci sono
+                for r_index in range(1, len(grid)):
+                    if(grid[r_index][c_index] == "A"):
+                        num_tents += 1
+                
+                if(num_tents == limit):
+                    for r_index in range(1, len(grid)):
+                        if(grid[r_index][c_index] == "." or grid[r_index][c_index] == "P"):
+                            grid[r_index][c_index] = "F"
+                            changed = True
+            
             for t in trees:
                 moves = []
                 for d in dir:    
@@ -308,23 +362,26 @@ class Tents(BoardGame):
                 # POSIZIONAMENTO DELLA TENDA NELL'UNICA POSIZIONE POSSIBILE PER QUELL'ALBERO        
                 if(len(moves) == 1): 
                     s_y, s_x = moves[0]
-                    grid[s_y][s_x] = "A" # A E' LA POSIZIONE DELLA TENDA SICURA
-                    for i in [-1, 0, 1]:
-                        for j in [-1, 0, 1]:
-                            if(i == 0 and j == 0): continue
-                            if(1 <= s_x+i < len(grid[0]) and 1 <= s_y+j < len(grid)):
-                                if(grid[s_y+j][s_x+i] == "." or grid[s_y+j][s_x+i] == "P"):
-                                    grid[s_y+j][s_x+i] = "F"
-                                    changed = True
+                    if(grid[s_y][s_x] != "A"):
+                        grid[s_y][s_x] = "A"
+                        changed = True
+                        self.forbid_around(grid, s_y, s_x)
                 # POSIZIONO P PER INDICARE POSIZIONI DELLE TENDE POSSIBILI
                 for m in moves:
                     y, x = m
                     if(grid[y][x] == "."):
                         grid[y][x] = "P"
-                        changed = True
-                        
+                        changed = True  
                         
         return grid
     
     def getGrid(self):
         return self._grid
+    
+    def forbid_around(self, grid: list, y: int, x:int):
+        for i in [-1, 0, 1]:
+            for j in [-1, 0, 1]:
+                if(i == 0 and j == 0): continue
+                if(1 <= x+i < len(grid[0]) and 1 <= y+j < len(grid)):
+                    if(grid[y+j][x+i] == "." or grid[y+j][x+i] == "P"):
+                        grid[y+j][x+i] = "F"
