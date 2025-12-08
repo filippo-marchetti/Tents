@@ -12,7 +12,7 @@ def main():
 
     game = Tents()
     
-    CANVAS_DIM = 899
+    CANVAS_DIM = 900
     box_dim = (CANVAS_DIM)/max(game.rows(), game.cols()) # DIMESIONE DI UNA SINGOLA CASELLA NELLA GRIGLIA
     text_dim = int(box_dim*0.6) # DIMENSIONE TESTO
     border_dim = 1 # DIMENSIONE TESTO
