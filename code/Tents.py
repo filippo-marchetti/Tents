@@ -378,6 +378,9 @@ class Tents(BoardGame):
     def getGrid(self):
         return self._grid
     
+    def setGrid(self, grid):
+        self._grid = grid
+    
     def forbid_around(self, grid: list, y: int, x:int):
         for i in [-1, 0, 1]:
             for j in [-1, 0, 1]:
